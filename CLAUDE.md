@@ -160,3 +160,73 @@ catching you out, a fact about the stack the agent keeps getting wrong --- write
 it down here. Growing this file is the work of harness engineering, and the gap
 between this boilerplate and your own version is part of what your prototype
 says about the developer you're becoming.
+
+## This prototype: a teletext news service
+
+Five pages on a 40x24 grid, fed by the BBC News RSS feed. Everything below is a
+rule I added after getting it wrong once, so read it before proposing a change.
+
+### The grid is enforced by the build, never by hand
+
+- Prose goes in `<p class="wrap">` as ordinary readable sentences. The build
+  breaks it to the column count. **Never hand-wrap text in the markup and never
+  count characters by eye** --- that is how a grid quietly drifts a column
+  wider.
+- `COLUMNS` in `teletext.ts` is the single source of the line length. Both the
+  wrapper and `spec/pages.test.ts` read it, so changing it changes the checks
+  too. Don't hard-code 40 anywhere else.
+
+### No JavaScript may ship, this week
+
+- The feed is read in `buildStart`, so nothing about it reaches the browser.
+  `spec/pages.test.ts` asserts no `.js` file, no `<script>`, and no inline
+  `on*=` handler in `dist/`. If a change needs client-side script, it is the
+  wrong change for this brief.
+
+### No external links, anywhere
+
+- CI runs `linkinator ./dist`, which validates outbound links too. The BBC
+  returns 403 to automated requests often enough that a link to a story would
+  make the deploy fail on someone else's server. Teletext had no hyperlinks
+  either, so credit sources in plain text and keep every `href` internal.
+- `linkinator` **cannot be run locally in this checkout** --- its own dependency
+  fails to resolve under this pnpm store. `spec/pages.test.ts` asserts every
+  internal reference resolves to a file that exists, which is the part of that
+  sensor worth having before a push.
+
+### Never trust a screenshot for size or layout
+
+- The preview tool renders at the pane's own size, not at the emulated viewport,
+  so a screenshot taken at 1920x1080 can look like a narrow column glued to the
+  corner while the page is in fact correctly centred. **Measure with
+  `preview_inspect` or `preview_eval`** --- computed styles and bounding boxes
+  are the truth. Screenshots are for judging the look, never the geometry.
+- Both marked viewports have to look deliberate. At 390x844 the width binds and
+  at 1920x1080 the height does, so the cell size is `min()` of the two. Four
+  coloured keys share one 40-column row, which leaves ten characters per label;
+  longer labels clip on the phone, and a test now holds that line.
+
+### The toolchain here
+
+- **Node must be 24.** `pnpm check:evidence` runs `node scripts/check-evidence.ts`
+  directly, which needs native type stripping; Node 22 cannot run it.
+- **Do not add `scripts` to `tsconfig.json`'s `include`.** It looks like an
+  oversight and is not: `scripts/check-evidence.ts` uses `toSorted` and
+  `findLast`, which are ES2023, while `lib` is ES2022. Widening the include
+  turns the course's own code red. Code that wants typechecking goes in the repo
+  root, which `*.ts` already covers.
+- The feed's hostname resolves intermittently from this network: `curl` succeeds
+  where Node's resolver returns `ENOTFOUND`. `scripts/refresh-news.ts` therefore
+  accepts the feed on stdin as well as fetching it, and `loadBulletin` falls back
+  to `data/news.json`. **A build must never fail because a feed did not
+  answer.**
+
+### Editorial rules the data forced
+
+- The feed carries house promos with real summaries, so they cannot be filtered
+  on missing fields; the 48-hour age window drops them as a side effect of being
+  right about what news is.
+- Section feeds repeat a front-page story under a shortened headline. Dedupe on
+  one normalised headline being a **prefix** of another, keeping the longer.
+- The clock is London time with its real abbreviation. UTC is a near miss for
+  half the year, which is worse than being plainly foreign.
