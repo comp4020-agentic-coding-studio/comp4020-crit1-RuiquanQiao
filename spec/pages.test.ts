@@ -87,6 +87,33 @@ describe("it is a real site", () => {
     expect(unreachable, "pages with no path from the home page").toEqual([]);
   });
 
+  // The reachability test above walks links it recognises, so a typo in an
+  // href reads as an external link and slips through it. CI's link checker
+  // would catch that after the fact; this catches it before the push.
+  it("resolves every internal reference to a file that exists", () => {
+    const present = new Set(
+      files(DIST).map((path) => path.slice(DIST.length + 1).replace(/\\/g, "/")),
+    );
+    const broken: string[] = [];
+
+    for (const { name, doc } of pages) {
+      const references = [
+        ...[...doc.querySelectorAll("a[href]")].map((el) => el.getAttribute("href")),
+        ...[...doc.querySelectorAll("link[href]")].map((el) => el.getAttribute("href")),
+        ...[...doc.querySelectorAll("img[src]")].map((el) => el.getAttribute("src")),
+      ];
+      for (const reference of references) {
+        if (reference === null) continue;
+        if (/^[a-z]+:/i.test(reference) || reference.startsWith("#")) continue;
+        const [path] = reference.split(/[?#]/);
+        const target = path === "./" || path === "" ? "index.html" : path.replace(/^\.\//, "");
+        if (!present.has(target)) broken.push(`${name} -> ${reference}`);
+      }
+    }
+
+    expect(broken, "references with no file behind them").toEqual([]);
+  });
+
   it("lets every page get back to the home page", () => {
     for (const { name, doc } of pages) {
       if (name === "index.html") continue;
