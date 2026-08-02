@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_AGE_HOURS,
   decodeEntities,
+  loadBulletin,
   normaliseTitle,
   parseFeed,
   serviceTime,
@@ -60,6 +61,23 @@ describe("feed entities", () => {
   it("leaves an unknown entity alone rather than mangling it", () => {
     expect(decodeEntities("&notanentity;")).toBe("&notanentity;");
   });
+});
+
+describe("the build survives a feed that does not answer", () => {
+  // The deploy rebuilds on every push, so a feed outage would otherwise take
+  // the whole site down. This is the claim PROCESS.md makes, held by a check.
+  it("serves the committed snapshot instead of failing", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = () => Promise.reject(new Error("getaddrinfo ENOTFOUND"));
+    try {
+      const bulletin = await loadBulletin();
+      expect(bulletin.stories.length).toBeGreaterThan(0);
+      expect(bulletin.source).toBeTruthy();
+      expect(Number.isNaN(Date.parse(bulletin.fetchedAt))).toBe(false);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  }, 20_000);
 });
 
 describe("the service clock", () => {
