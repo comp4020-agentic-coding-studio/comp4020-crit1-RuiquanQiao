@@ -2,6 +2,12 @@ node_modules/
 dist/
 *.log
 
+# Build artefacts of the teletext prepare step: the bulletin this build renders,
+# and one generated page per story. The tracked sources are the template in
+# scripts/prepare-pages.ts and the snapshot in data/.
+.bulletin.json
+/3[0-9][0-9].html
+
 # editor and OS junk
 .DS_Store
 ._*

@@ -13,14 +13,14 @@
   <body>
     <div class="screen">
       <div class="statusbar">
-        <span class="page-no">P100</span>
         <span class="service">Teletext</span>
-        <span class="clock"><!--tt:clock--></span>
+        <span class="page-no">100</span>
       </div>
       <div class="colourbar" aria-hidden="true"></div>
+      <p class="band band-blue">Updated <!--tt:clock--></p>
 
       <main>
-        <h1>Contents</h1>
+        <h1 class="dh">Contents</h1>
 
         <p class="wrap">
           Ceefax closed in October 2012 after thirty-eight years. This is today's
@@ -30,34 +30,39 @@
 
         <ul class="index">
           <li class="index-row">
-            <span class="index-no">101</span>
-            <a href="./101.html">News headlines</a>
+            <a href="./101.html"><span class="index-no">101</span> News headlines</a>
           </li>
           <li class="index-row">
-            <span class="index-no">102</span>
-            <a href="./102.html">News in full</a>
+            <a href="./102.html"><span class="index-no">102</span> News in brief</a>
           </li>
           <li class="index-row">
-            <span class="index-no">103</span>
-            <a href="./103.html">More news</a>
+            <a href="./199.html"><span class="index-no">199</span> About this service</a>
           </li>
           <li class="index-row">
-            <span class="index-no">199</span>
-            <a href="./199.html">About this service</a>
+            <a href="./200.html"><span class="index-no">200</span> How it is built</a>
           </li>
         </ul>
 
-        <p class="source">
-          <!--tt:count--> stories from <!--tt:source--> · read <!--tt:clock-->
+        <p class="wrap">
+          Stories are told in full on pages 301 to 306. Page 101 lists them with
+          the page each one is on.
         </p>
+
+        <p class="wrap source"><!--tt:count--> stories from <!--tt:source--></p>
       </main>
 
       <nav aria-label="Teletext pages">
+        <ul class="dir">
+          <li class="dir-row"><span>Heads</span><a href="./101.html">101</a></li>
+          <li class="dir-row"><span>Brief</span><a href="./102.html">102</a></li>
+          <li class="dir-row"><span>About</span><a href="./199.html">199</a></li>
+          <li class="dir-row"><span>Index</span><a href="./">100</a></li>
+        </ul>
         <div class="fastext">
           <a class="key key-red" href="./101.html">101 News</a>
-          <a class="key key-green" href="./102.html">102 Full</a>
-          <a class="key key-yellow" href="./103.html">103 More</a>
-          <a class="key key-cyan" href="./199.html">199 About</a>
+          <a class="key key-green" href="./102.html">102 Brief</a>
+          <a class="key key-yellow" href="./199.html">199 About</a>
+          <span class="key key-cyan" aria-disabled="true">100 Index</span>
         </div>
       </nav>
     </div>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>P200 How it is built — Teletext</title>
+    <meta
+      name="description"
+      content="How a page with no JavaScript reads a live news feed, and why its clock does not tick."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="screen">
+      <div class="statusbar">
+        <span class="service">Teletext</span>
+        <span class="page-no">200</span>
+      </div>
+      <div class="colourbar" aria-hidden="true"></div>
+      <p class="band band-blue">Updated <!--tt:clock--></p>
+
+      <main>
+        <h1 class="dh">Built</h1>
+
+        <p class="band band-cyan">No script, anywhere</p>
+        <p class="wrap">
+          The feed is read when the site is built, never in your browser. Nothing
+          on any page here is a script, which is the week's brief and also why
+          the clock cannot tick.
+        </p>
+
+        <p class="band band-cyan">The grid is computed</p>
+        <p class="wrap">
+          The build breaks every line to forty columns and counts the rows a page
+          needs, so the page is fitted to your screen instead of scrolling off
+          the bottom of it. Teletext never scrolled either.
+        </p>
+
+        <p class="band band-cyan">When the feed is down</p>
+        <p class="wrap">
+          A committed snapshot is served instead. The site rebuilds on every
+          push, so a feed that will not answer would otherwise take it down: a
+          stale page is a teletext page, a failed build is nothing at all.
+        </p>
+
+        <p class="band band-cyan">The clock</p>
+        <p class="wrap">
+          It says when the feed was read, not what time it is now. Times are
+          Canberra's, converted from a British source.
+        </p>
+
+        <p class="wrap source">Built for COMP4020 &middot; Crit 1 &middot; Forgotten web</p>
+      </main>
+
+      <nav aria-label="Teletext pages">
+        <ul class="dir">
+          <li class="dir-row"><span>Index</span><a href="./">100</a></li>
+          <li class="dir-row"><span>Heads</span><a href="./101.html">101</a></li>
+          <li class="dir-row"><span>Brief</span><a href="./102.html">102</a></li>
+          <li class="dir-row"><span>About</span><a href="./199.html">199</a></li>
+        </ul>
+        <div class="fastext">
+          <a class="key key-red" href="./101.html">101 News</a>
+          <a class="key key-green" href="./102.html">102 Brief</a>
+          <a class="key key-yellow" href="./199.html">199 About</a>
+          <a class="key key-cyan" href="./">100 Index</a>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>

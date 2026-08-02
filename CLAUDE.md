@@ -194,6 +194,21 @@ rule I added after getting it wrong once, so read it before proposing a change.
   internal reference resolves to a file that exists, which is the part of that
   sensor worth having before a push.
 
+### A page is a screenful, and the build proves it
+
+- Teletext never scrolled: what did not fit went on the next page. So the build
+  counts the rows a page needs and writes them onto it as `--tt-vunit`, and the
+  stylesheet sizes the cell from that. **This only works because every margin in
+  `styles.css` is exactly one row (`1.25em`) or zero.** Adding a `0.5em` margin
+  anywhere silently breaks the count, and the page runs off the bottom of the
+  screen without any check noticing --- both marked viewports would just scroll.
+  `spec/pages.test.ts` asserts the declared count matches the page.
+- The cell size is capped low (30px). Without a ceiling a short page sets type
+  twice the size of a long one and the interface appears to resize as the reader
+  moves between pages, which no fixed-cell medium ever did. If a page needs so
+  many rows that it drops out of the pack, **split it across two page numbers**
+  the way the medium did --- that is what 200 is.
+
 ### Never trust a screenshot for size or layout
 
 - The preview tool renders at the pane's own size, not at the emulated viewport,
@@ -201,6 +216,12 @@ rule I added after getting it wrong once, so read it before proposing a change.
   corner while the page is in fact correctly centred. **Measure with
   `preview_inspect` or `preview_eval`** --- computed styles and bounding boxes
   are the truth. Screenshots are for judging the look, never the geometry.
+- Its navigation is also unreliable here: setting `location.href`, and clicking a
+  link, both leave the measuring context on the page it started from, so a
+  measurement can silently describe a different page than the one you meant.
+  **Read `location.pathname` back in the same call** as anything you measure. To
+  check every page at once, count rows from `dist/` in Node instead --- it is
+  deterministic, and it is what the spec test does.
 - Both marked viewports have to look deliberate. At 390x844 the width binds and
   at 1920x1080 the height does, so the cell size is `min()` of the two. Four
   coloured keys share one 40-column row, which leaves ten characters per label;

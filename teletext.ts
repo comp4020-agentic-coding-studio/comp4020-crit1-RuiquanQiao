@@ -17,7 +17,25 @@ export const COLUMNS = 40;
 const BODY_WIDTH = 36;
 
 export const FEED_URL = "https://feeds.bbci.co.uk/news/rss.xml";
+
+/** The committed fallback, used when the feed will not answer. */
 export const SNAPSHOT = "data/news.json";
+
+/**
+ * The bulletin this build is rendering, written once by the prepare step.
+ *
+ * The network is called in exactly one place. If the page generator and the
+ * plugin each read the feed themselves, a story that arrives between the two
+ * calls puts a headline on page 101 that points at a page telling a different
+ * story — a wrong site rather than a stale one.
+ */
+export const BUILD_BULLETIN = ".bulletin.json";
+
+/** The first story page. Teletext put the news in the 300s. */
+export const FIRST_STORY_PAGE = 301;
+
+/** How many stories get a page of their own. */
+export const STORY_PAGES = 6;
 
 export type Story = {
   title: string;
@@ -162,6 +180,21 @@ export function writeSnapshot(bulletin: Bulletin): void {
   writeFileSync(SNAPSHOT, `${JSON.stringify(bulletin, null, 2)}\n`);
 }
 
+export function readBuildBulletin(): Bulletin {
+  return JSON.parse(readFileSync(BUILD_BULLETIN, "utf8")) as Bulletin;
+}
+
+export function writeBuildBulletin(bulletin: Bulletin): void {
+  writeFileSync(BUILD_BULLETIN, `${JSON.stringify(bulletin, null, 2)}\n`);
+}
+
+/** The page number a story is told on, and the stories that get one. */
+export function storyPages(bulletin: Bulletin): { page: number; story: Story }[] {
+  return bulletin.stories
+    .slice(0, STORY_PAGES)
+    .map((story, index) => ({ page: FIRST_STORY_PAGE + index, story }));
+}
+
 async function readFeedOnce(): Promise<string> {
   const response = await fetch(FEED_URL, { signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error(`feed returned HTTP ${response.status}`);
@@ -223,18 +256,40 @@ function rows(lines: string[], className: string): string {
   return lines.map((line) => `<p class="${className}">${escapeHtml(line)}</p>`).join("\n");
 }
 
-/** A numbered headline: the number sits in the margin, the text wraps under it. */
-export function renderHeadlines(stories: Story[]): string {
-  return stories
-    .map((story, index) => {
-      const lines = wrap(story.title, BODY_WIDTH - 3);
-      const body = lines
-        .map((line, lineIndex) => {
-          const gutter = lineIndex === 0 ? String(index + 1).padStart(2) : "  ";
-          return `<p class="row"><span class="gutter">${gutter}</span> ${escapeHtml(line)}</p>`;
-        })
+/**
+ * A headline with its page number set hard against the right margin.
+ *
+ * This is teletext's signature and the thing a numbered list cannot do: the
+ * reader's eye runs down a column of three-digit numbers and each one is an
+ * instruction — type it and you get that story. The number is not decoration,
+ * so it is placed by arithmetic on the grid rather than by an alignment rule
+ * that could round differently.
+ */
+export function renderHeadlines(pages: { page: number; story: Story }[]): string {
+  return pages
+    .map(({ page, story }) => {
+      const ref = String(page);
+      const lines = wrap(story.title, COLUMNS - ref.length - 1);
+      const head = lines[0] ?? "";
+      const gap = " ".repeat(Math.max(1, COLUMNS - ref.length - head.length));
+      const first =
+        `<p class="row lead">${escapeHtml(head)}${gap}` +
+        `<span class="pageref">${ref}</span></p>`;
+      const rest = lines
+        .slice(1)
+        .map((line) => `<p class="row cont">${escapeHtml(line)}</p>`)
         .join("\n");
-      return `<li class="headline">\n${body}\n</li>`;
+      return [`<li class="headline">`, first, rest, `</li>`].filter(Boolean).join("\n");
+    })
+    .join("\n");
+}
+
+/** The in-brief page: one story per line, cut rather than wrapped. */
+export function renderBrief(stories: Story[]): string {
+  return stories
+    .map((story) => {
+      const [line] = wrap(story.title, COLUMNS);
+      return `<li><p class="row cont">${escapeHtml(line ?? "")}</p></li>`;
     })
     .join("\n");
 }
@@ -266,21 +321,25 @@ export function serviceZone(date: Date): string {
   return parts.find((part) => part.type === "timeZoneName")?.value ?? "";
 }
 
-/** A story in full: headline, then its summary, then its clock. */
-export function renderStories(stories: Story[]): string {
-  return stories
-    .map((story) => {
-      const time = new Date(story.published);
-      const stamp = `${serviceTime(time)} ${serviceZone(time)}`;
-      return [
-        `<li class="story">`,
-        rows(wrap(story.title, BODY_WIDTH), "row headline-row"),
-        rows(wrap(story.summary, BODY_WIDTH), "row"),
-        `<p class="row stamp">${stamp}</p>`,
-        `</li>`,
-      ].join("\n");
-    })
-    .join("\n");
+/**
+ * A story page's headline, which is also the page's one top-level heading.
+ *
+ * It is wrapped into grid rows rather than left to the browser: a heading that
+ * reflows on its own is the one element that would break the grid, and it is
+ * the most visible line on the page.
+ */
+export function renderStoryHead(story: Story): string {
+  return rows(wrap(story.title, BODY_WIDTH), "row lead");
+}
+
+/** The rest of a story page: the summary, and when the story filed. */
+export function renderStoryBody(story: Story): string {
+  const filed = new Date(story.published);
+  return [
+    rows(wrap(story.summary, BODY_WIDTH), "row cont"),
+    `<p class="row"> </p>`,
+    `<p class="row stamp">Filed ${serviceTime(filed)} ${serviceZone(filed)}</p>`,
+  ].join("\n");
 }
 
 /**
@@ -290,12 +349,55 @@ export function renderStories(stories: Story[]): string {
  * build breaks it to the column count. The alternative is counting characters
  * by hand in the markup, which is how a grid drifts one column wider without
  * anyone noticing.
+ *
+ * Any further classes are carried through, so `class="wrap source"` becomes
+ * grid rows that are still styled as a source line. Every piece of prose on the
+ * page goes through here; anything that does not is being wrapped by the
+ * browser instead, which is the one thing the grid cannot survive.
  */
 export function expandProse(html: string): string {
-  return html.replace(/<p class="wrap">([\s\S]*?)<\/p>/g, (_, text: string) => {
+  return html.replace(/<p class="wrap([^"]*)">([\s\S]*?)<\/p>/g, (_, extra: string, text: string) => {
     const flat = decodeEntities(text).replace(/\s+/g, " ").trim();
-    return rows(wrap(flat, BODY_WIDTH), "row");
+    return rows(wrap(flat, BODY_WIDTH), `row${extra}`);
   });
+}
+
+/**
+ * How many rows of the grid a finished page occupies.
+ *
+ * Teletext never scrolled. A page was a screenful, and anything that did not
+ * fit went on the next page — so the honest translation is to let the cell size
+ * follow the page rather than let the page run off the bottom of the screen.
+ * That needs a row count, which is only knowable if every piece of vertical
+ * space is a whole number of rows: the stylesheet has no margin that is not
+ * exactly one row, which is why this can be counted rather than measured.
+ */
+export function countRows(html: string): number {
+  const tally = (pattern: RegExp): number => (html.match(pattern) ?? []).length;
+
+  const dirRows = Math.ceil(tally(/class="dir-row"/g) / 2);
+
+  return (
+    1 + // the status row
+    1 + // the bar of colour under it
+    tally(/class="band /g) +
+    tally(/class="dh"/g) * 2 + // double height: one row of layout, one reserved
+    tally(/class="row[" ]/g) +
+    tally(/class="index-row"/g) +
+    tally(/class="headline"/g) + // each is followed by one blank row
+    (dirRows > 0 ? dirRows + 1 : 0) + // the directory, and the blank row above it
+    2 // the blank row above the coloured keys, and the keys
+  );
+}
+
+/**
+ * The divisor the stylesheet uses to size a cell from the viewport height.
+ *
+ * Rows are 1.25em tall, and one spare row keeps the last line clear of the
+ * bottom edge.
+ */
+export function heightUnits(html: string): number {
+  return Math.ceil(countRows(html) * 1.25) + 1;
 }
 
 /** The clock in every page header, in the style the service used. */
@@ -320,23 +422,40 @@ export function teletext(): Plugin {
 
   return {
     name: "teletext",
-    async buildStart() {
-      bulletin = await loadBulletin();
+    buildStart() {
+      // No network here: the prepare step already read the feed once and wrote
+      // what this build renders, so every page comes from the same bulletin.
+      bulletin = readBuildBulletin();
     },
     transformIndexHtml: {
       order: "pre",
-      handler(html: string): string {
+      handler(html: string, ctx): string {
         if (!bulletin) throw new Error("no bulletin loaded");
-        const { stories } = bulletin;
-        return expandProse(
+        const pages = storyPages(bulletin);
+
+        const page = /(\d{3})\.html$/.exec(ctx.path);
+        const onThisPage = page ? pages.find((p) => p.page === Number(page[1])) : undefined;
+
+        const filled = expandProse(
           html
             .replaceAll("<!--tt:clock-->", renderClock(bulletin))
-            .replaceAll("<!--tt:count-->", String(stories.length))
+            .replaceAll("<!--tt:count-->", String(bulletin.stories.length))
             .replaceAll("<!--tt:source-->", escapeHtml(bulletin.source))
-            .replaceAll("<!--tt:headlines-->", renderHeadlines(stories.slice(0, 9)))
-            .replaceAll("<!--tt:stories-->", renderStories(stories.slice(0, 4)))
-            .replaceAll("<!--tt:more-->", renderStories(stories.slice(4, 9))),
+            .replaceAll("<!--tt:headlines-->", renderHeadlines(pages))
+            .replaceAll("<!--tt:brief-->", renderBrief(bulletin.stories.slice(STORY_PAGES)))
+            .replaceAll(
+              "<!--tt:story-head-->",
+              onThisPage ? renderStoryHead(onThisPage.story) : "",
+            )
+            .replaceAll(
+              "<!--tt:story-body-->",
+              onThisPage ? renderStoryBody(onThisPage.story) : "",
+            ),
         );
+
+        // Sized last, because the page has to be finished before it can be
+        // counted.
+        return filled.replace("<body>", `<body style="--tt-vunit: ${heightUnits(filled)}">`);
       },
     },
   };

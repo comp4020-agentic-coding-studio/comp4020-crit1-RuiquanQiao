@@ -13,63 +13,49 @@
   <body>
     <div class="screen">
       <div class="statusbar">
-        <span class="page-no">P199</span>
         <span class="service">Teletext</span>
-        <span class="clock"><!--tt:clock--></span>
+        <span class="page-no">199</span>
       </div>
       <div class="colourbar" aria-hidden="true"></div>
+      <p class="band band-blue">Updated <!--tt:clock--></p>
 
       <main>
-        <h1>About this service</h1>
+        <h1 class="dh">About</h1>
 
-        <h2>The medium</h2>
+        <p class="band band-cyan">The medium</p>
         <p class="wrap">
-          Teletext carried pages of forty columns by twenty-four rows, in seven
-          colours on black. There was no scrolling and no layout: text either
-          fitted the grid or it was cut. You did not follow a link, you typed
-          three digits and waited for the page to come round again.
+          Forty columns by twenty-four rows, seven colours on black. Text fitted
+          the grid or it was cut, and you did not follow a link: you typed three
+          digits and waited for the page to come round again.
         </p>
 
-        <h2>Why it looks like this</h2>
+        <p class="band band-cyan">Why it looks like this</p>
         <p class="wrap">
           Ceefax, the BBC's teletext service, ran from 1974 until October 2012.
-          The interface outlived the technology in memory but not on air. These
-          pages put a live news feed back into it.
+          These pages put a live news feed back into it.
         </p>
 
-        <h2>Where the news comes from</h2>
+        <p class="band band-cyan">The news</p>
         <p class="wrap">
-          Headlines and summaries are from the BBC News public feed, copyright
-          the British Broadcasting Corporation. This is a student homage, not a
-          BBC service, and nothing here is endorsed by the BBC.
+          From the BBC News public feed, copyright the British Broadcasting
+          Corporation. A student homage, not a BBC service, endorsed by nobody.
         </p>
 
-        <h2>How it is built</h2>
-        <p class="wrap">
-          The feed is read when the site is built, never in your browser: there
-          is no JavaScript on any page here. The build wraps every line to the
-          grid, so the breaks you see are computed rather than typed. When the
-          feed cannot be reached the build serves a committed snapshot, because a
-          stale page is a teletext page and a failed build is nothing at all.
-        </p>
-
-        <h2>The clock</h2>
-        <p class="wrap">
-          The time in the header is when the feed was read, not when you loaded
-          the page. Teletext pages were snapshots too. The source is British but
-          the reader is not, so times are Canberra's, converted.
-        </p>
-
-        <p class="source">Built for COMP4020 · Crit 1 · Forgotten web</p>
+        <p class="wrap source">How it is built continues on page 200</p>
       </main>
 
       <nav aria-label="Teletext pages">
-        <p class="index-row"><span class="index-no">100</span><a href="./">Index</a></p>
+        <ul class="dir">
+          <li class="dir-row"><span>Index</span><a href="./">100</a></li>
+          <li class="dir-row"><span>Heads</span><a href="./101.html">101</a></li>
+          <li class="dir-row"><span>Brief</span><a href="./102.html">102</a></li>
+          <li class="dir-row"><span>Built</span><a href="./200.html">200</a></li>
+        </ul>
         <div class="fastext">
           <a class="key key-red" href="./101.html">101 News</a>
-          <a class="key key-green" href="./102.html">102 Full</a>
-          <a class="key key-yellow" href="./103.html">103 More</a>
-          <span class="key key-cyan" aria-disabled="true">199 About</span>
+          <a class="key key-green" href="./102.html">102 Brief</a>
+          <a class="key key-yellow" href="./200.html">200 Built</a>
+          <a class="key key-cyan" href="./">100 Index</a>
         </div>
       </nav>
     </div>

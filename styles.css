@@ -10,6 +10,10 @@
  * small and the text is small with it, and on a desktop the cells get bigger
  * rather than the line getting longer. A teletext page on a big television was
  * a big teletext page, not a wide one.
+ *
+ * Colour carries meaning rather than decoration, which is how a page with no
+ * typography to speak of gets a hierarchy: yellow leads, white continues, cyan
+ * is a number you can type, green is a page you can go to.
  */
 
 :root {
@@ -36,17 +40,25 @@ html {
 }
 
 body {
-  /* The cell size is whatever makes a whole page fit, so it is bound by both
-   * axes at once: 40 columns across, 24 rows down. A teletext page filled the
-   * television — it did not sit in a column in the middle of one — so the
-   * limiting dimension is usually the height, and the text grows with the
-   * screen instead of the line getting longer.
+  /* The cell size is whatever makes a whole page fit, bound by both axes at
+   * once: 40 columns across, and however many rows this page needs down.
+   * Teletext never scrolled — a page was a screenful and the rest went on the
+   * next page — so the page is fitted to the screen rather than allowed to run
+   * off the bottom of it.
    *
-   * Divided by 25 and 31 rather than 24 and 30: monospace advance widths vary
-   * between 0.5em and 0.6em between platforms, and the slack keeps the grid
-   * inside the viewport on all of them. */
+   * `--tt-vunit` is that row count, written onto each page by the build, which
+   * can only count it because every margin in this file is exactly one row.
+   * The fallback is for a page rendered without the build.
+   *
+   * The ceiling is low on purpose. Without it a short page would set type twice
+   * the size of a long one and the whole interface would appear to resize as
+   * the reader moved between pages, which no fixed-cell medium ever did.
+   *
+   * Divided by 25 rather than 24: monospace advance widths vary between 0.5em
+   * and 0.6em between platforms, and the slack keeps 40 columns inside the
+   * viewport on all of them. */
   font-family: "Cascadia Mono", Consolas, Menlo, "DejaVu Sans Mono", monospace;
-  font-size: clamp(10px, min(calc((100vw - 1rem) / 25), calc((100vh - 1rem) / 31)), 40px);
+  font-size: clamp(8px, min(calc((100vw - 1rem) / 25), calc((100vh - 0.5rem) / var(--tt-vunit, 31))), 30px);
   line-height: 1.25;
   margin: 0;
   padding: 0;
@@ -77,7 +89,7 @@ body {
 
 /* --- the header row ------------------------------------------------------ */
 
-/* Page number, service name and clock, in one row, as every page carried. */
+/* Service name and page number, in one row, as every page carried. */
 .statusbar {
   display: flex;
   justify-content: space-between;
@@ -85,18 +97,15 @@ body {
   white-space: nowrap;
 }
 
-.page-no {
-  color: var(--tt-white);
-  background: var(--tt-blue);
-}
-
 .service {
   color: var(--tt-yellow);
   text-transform: uppercase;
 }
 
-.clock {
-  color: var(--tt-cyan);
+.page-no {
+  padding: 0 1ch;
+  color: var(--tt-white);
+  background: var(--tt-blue);
 }
 
 /* The block of colour under the header. Hard stops, so it reads as seven
@@ -115,31 +124,59 @@ body {
   );
 }
 
-/* --- headings ----------------------------------------------------------- */
+/* --- full-width bands ---------------------------------------------------- */
+
+/* A row given over entirely to one colour. Teletext used these to separate a
+ * page into parts without any rule, border or whitespace to do it with. */
+.band {
+  margin: 0;
+  padding: 0 1ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.band-blue {
+  color: var(--tt-white);
+  background: var(--tt-blue);
+}
+
+.band-cyan {
+  color: var(--tt-black);
+  background: var(--tt-cyan);
+}
+
+.band-red {
+  color: var(--tt-white);
+  background: var(--tt-red);
+}
+
+/* --- headings ------------------------------------------------------------ */
 
 /* Teletext's double-height mode: twice as tall, same width, so a heading eats
- * two of the twenty-four rows. */
-h1,
-h2 {
-  margin: 0.5em 0 0.25em;
+ * two of the twenty-four rows. The transform leaves the layout box one row
+ * tall, hence the margin that reserves the second one. */
+.dh {
+  margin: 0 0 1.25em;
   font-size: 1em;
   font-weight: normal;
   line-height: 1.25;
+  color: var(--tt-yellow);
   text-transform: uppercase;
   transform: scaleY(2);
   transform-origin: left top;
-  margin-bottom: 1.5em;
 }
 
-h1 {
-  color: var(--tt-yellow);
+/* A story page's headline is the page's heading and its first content: it is
+ * already wrapped to the grid, so it needs no heading styling of its own. */
+.story-head {
+  margin: 0;
+  font-size: 1em;
+  font-weight: normal;
+  line-height: 1.25;
 }
 
-h2 {
-  color: var(--tt-cyan);
-}
-
-/* --- body rows ---------------------------------------------------------- */
+/* --- body rows ----------------------------------------------------------- */
 
 /* Every row of prose is pre-wrapped to the grid by the build, so nothing here
  * re-flows it: the line breaks are the page, not a side effect of width. */
@@ -149,12 +186,19 @@ h2 {
   text-transform: uppercase;
 }
 
-.gutter {
-  color: var(--tt-cyan);
+/* Yellow leads a story, white continues it: the reader can see where one
+ * headline stops and the next begins without a blank row between them. */
+.lead {
+  color: var(--tt-yellow);
 }
 
-.headline-row {
-  color: var(--tt-yellow);
+.cont {
+  color: var(--tt-white);
+}
+
+/* A number you can type. Set hard against the right margin by the build. */
+.pageref {
+  color: var(--tt-cyan);
 }
 
 .stamp {
@@ -162,7 +206,7 @@ h2 {
 }
 
 .source {
-  margin: 1em 0 0;
+  margin: 0;
   color: var(--tt-cyan);
   text-transform: uppercase;
 }
@@ -175,14 +219,10 @@ ul {
 }
 
 .headline {
-  margin-bottom: 0.75em;
-}
-
-.story {
   margin-bottom: 1.25em;
 }
 
-/* --- the contents page -------------------------------------------------- */
+/* --- the contents page --------------------------------------------------- */
 
 /* A page-number index, which is how a reader moved around: you did not follow
  * a link, you typed three digits. */
@@ -192,44 +232,43 @@ ul {
   text-transform: uppercase;
 }
 
-.index-row a {
-  color: var(--tt-white);
-  text-decoration: none;
-}
-
-.index-row a:hover,
-.index-row a:focus {
-  color: var(--tt-black);
-  background: var(--tt-white);
-}
-
 .index-no {
   color: var(--tt-green);
 }
 
-/* --- FASTEXT: the four coloured keys along the bottom ------------------- */
+/* --- the directory along the bottom -------------------------------------- */
+
+/* The dense block of label-and-number pairs every teletext page carried, so a
+ * reader never had to go back to the index to get somewhere else. */
+.dir {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0 2ch;
+  margin-top: 1.25em;
+}
+
+.dir-row {
+  display: flex;
+  justify-content: space-between;
+  text-transform: uppercase;
+}
+
+/* --- FASTEXT: the four coloured keys along the bottom -------------------- */
 
 .fastext {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin-top: 1.5em;
+  margin-top: 1.25em;
 }
 
 .key {
-  padding: 0 0.5ch;
+  padding: 0;
   overflow: hidden;
   color: var(--tt-black);
-  font-size: 0.875em;
+  font-size: 1em;
+  text-align: center;
   white-space: nowrap;
   text-transform: uppercase;
-  text-decoration: none;
-}
-
-.key:hover,
-.key:focus {
-  color: var(--tt-white);
-  background: var(--tt-black);
-  outline: 1px solid currentcolor;
 }
 
 .key-red {
@@ -252,6 +291,28 @@ ul {
  * four keys on it. */
 .key[aria-disabled="true"] {
   color: var(--tt-white);
-  background: #000;
+  background: var(--tt-black);
   outline: 1px solid var(--tt-white);
+}
+
+/* --- links --------------------------------------------------------------- */
+
+/* Green is the colour of somewhere you can go. Underlines belong to a later
+ * web; the colour is the affordance here, as it was on the page numbers. */
+a {
+  color: var(--tt-green);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus {
+  color: var(--tt-black);
+  background: var(--tt-green);
+}
+
+.key:hover,
+.key:focus {
+  color: var(--tt-white);
+  background: var(--tt-black);
+  outline: 1px solid currentcolor;
 }

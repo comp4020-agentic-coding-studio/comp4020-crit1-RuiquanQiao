@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { JSDOM } from "jsdom";
 import { beforeAll, describe, expect, it } from "vitest";
-import { COLUMNS } from "../teletext";
+import { COLUMNS, heightUnits } from "../teletext";
 
 // This week's published spec, in the lines a machine can settle. The rest —
 // whether the look commits to the era — is the crit's job, not this file's.
@@ -141,10 +141,37 @@ describe("the teletext grid", () => {
   it("gives every page a unique three-digit page number", () => {
     const numbers = pages.map(({ name, doc }) => {
       const shown = doc.querySelector(".page-no")?.textContent?.trim() ?? "";
-      expect(shown, `${name} has no page number`).toMatch(/^P\d{3}$/);
+      expect(shown, `${name} has no page number`).toMatch(/^\d{3}$/);
       return shown;
     });
     expect(new Set(numbers).size, "two pages share a page number").toBe(numbers.length);
+  });
+
+  // A band is one row of solid colour with `overflow: hidden`, so text too long
+  // for it disappears silently rather than wrapping. Two columns of padding
+  // leave thirty-eight.
+  it("keeps every coloured band inside its row", () => {
+    for (const { name, doc } of pages) {
+      for (const band of doc.querySelectorAll(".band")) {
+        const text = (band.textContent ?? "").trim();
+        expect(text.length, `${name}: "${text}" will be clipped`).toBeLessThanOrEqual(
+          COLUMNS - 2,
+        );
+      }
+    }
+  });
+
+  // Teletext never scrolled: a page was a screenful. The build sizes the cell
+  // from a row count it writes onto the page, so if that number ever drifts from
+  // what the page actually holds, the page silently runs off the bottom of the
+  // screen — which no viewport-based check would notice, since both marked
+  // viewports would simply scroll.
+  it("declares a row count that matches what the page holds", () => {
+    for (const { name, html, doc } of pages) {
+      const declared = doc.body.style.getPropertyValue("--tt-vunit").trim();
+      expect(declared, `${name} does not declare its height`).not.toBe("");
+      expect(Number(declared), `${name} declares the wrong height`).toBe(heightUnits(html));
+    }
   });
 
   it("leaves no unfilled slot behind", () => {
@@ -174,12 +201,26 @@ describe("the coloured keys", () => {
     }
   });
 
-  it("marks the key for the page you are on as unavailable", () => {
+  // A key that reloads the page you are already on is a dead control. Story
+  // pages dim whichever of back and next has nowhere to go; the fixed pages dim
+  // their own. Both come out as: no key is a link to here.
+  it("never links a key to the page it is on", () => {
     for (const { name, doc } of pages) {
-      if (name === "index.html") continue;
-      const disabled = doc.querySelectorAll('.fastext .key[aria-disabled="true"]');
-      expect(disabled, `${name} should dim its own key`).toHaveLength(1);
-      expect(disabled[0].tagName).not.toBe("A");
+      for (const key of doc.querySelectorAll(".fastext a.key")) {
+        const href = key.getAttribute("href") ?? "";
+        const target = href === "./" ? "index.html" : href.replace(/^\.\//, "");
+        expect(target, `${name} has a key pointing at itself`).not.toBe(name);
+      }
+    }
+  });
+
+  it("dims a key rather than dropping it, so the row always has four", () => {
+    for (const { name, doc } of pages) {
+      const dimmed = doc.querySelectorAll('.fastext .key[aria-disabled="true"]');
+      for (const key of dimmed) {
+        expect(key.tagName, `${name} dims a key that is still a link`).not.toBe("A");
+      }
+      expect(doc.querySelectorAll(".fastext .key"), `${name}`).toHaveLength(4);
     }
   });
 });

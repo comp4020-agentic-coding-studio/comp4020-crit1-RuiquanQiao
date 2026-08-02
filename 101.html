@@ -4,36 +4,42 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>P101 News headlines — Teletext</title>
-    <meta name="description" content="Today's headlines, wrapped to a 40-column teletext grid." />
+    <meta
+      name="description"
+      content="Today's headlines, each with the teletext page its story is told on."
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="screen">
       <div class="statusbar">
-        <span class="page-no">P101</span>
         <span class="service">Teletext</span>
-        <span class="clock"><!--tt:clock--></span>
+        <span class="page-no">101</span>
       </div>
       <div class="colourbar" aria-hidden="true"></div>
+      <p class="band band-blue">Updated <!--tt:clock--></p>
 
       <main>
-        <h1>News headlines</h1>
+        <h1 class="dh">News</h1>
+        <p class="band band-cyan">Headlines</p>
 
         <ol class="headlines"><!--tt:headlines--></ol>
 
-        <p class="source">
-          <!--tt:source--> · read <!--tt:clock--> · 102 for the same stories in
-          full
-        </p>
+        <p class="wrap source">Type a page number for the story in full</p>
       </main>
 
       <nav aria-label="Teletext pages">
-        <p class="index-row"><span class="index-no">100</span><a href="./">Index</a></p>
+        <ul class="dir">
+          <li class="dir-row"><span>Index</span><a href="./">100</a></li>
+          <li class="dir-row"><span>Brief</span><a href="./102.html">102</a></li>
+          <li class="dir-row"><span>About</span><a href="./199.html">199</a></li>
+          <li class="dir-row"><span>Latest</span><a href="./301.html">301</a></li>
+        </ul>
         <div class="fastext">
           <span class="key key-red" aria-disabled="true">101 News</span>
-          <a class="key key-green" href="./102.html">102 Full</a>
-          <a class="key key-yellow" href="./103.html">103 More</a>
-          <a class="key key-cyan" href="./199.html">199 About</a>
+          <a class="key key-green" href="./102.html">102 Brief</a>
+          <a class="key key-yellow" href="./199.html">199 About</a>
+          <a class="key key-cyan" href="./">100 Index</a>
         </div>
       </nav>
     </div>
