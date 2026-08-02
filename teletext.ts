@@ -239,23 +239,27 @@ export function renderHeadlines(stories: Story[]): string {
     .join("\n");
 }
 
-// The service was British, so its clock is: London time, labelled with whatever
-// London is calling it today. Showing UTC would be a near miss for half the
-// year, which is worse than being obviously foreign.
-const SERVICE_ZONE = "Europe/London";
+// The source is British; the reader is not. This bulletin is read in Canberra,
+// so it keeps Canberra's clock and converts the feed's timestamps into it.
+//
+// Pinning the zone matters beyond taste: the deploy builds on a CI runner set to
+// UTC, so a clock left to the machine would read two hours behind the room the
+// page is demoed in.
+const SERVICE_ZONE = "Australia/Canberra";
 
-function inLondon(date: Date, options: Intl.DateTimeFormatOptions): string {
+function inZone(date: Date, options: Intl.DateTimeFormatOptions): string {
+  // en-GB renders the date without a comma, which the grid prefers.
   return new Intl.DateTimeFormat("en-GB", { timeZone: SERVICE_ZONE, ...options }).format(date);
 }
 
-/** "18:24" in London, whatever the reader's own clock says. */
+/** "18:24" in Canberra, whatever the building machine's clock says. */
 export function serviceTime(date: Date): string {
-  return inLondon(date, { hour: "2-digit", minute: "2-digit", hour12: false });
+  return inZone(date, { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-/** "BST" in summer, "GMT" in winter. */
+/** "AEST" in winter, "AEDT" over summer. Only en-AU names them; en-GB says "GMT+10". */
 export function serviceZone(date: Date): string {
-  const parts = new Intl.DateTimeFormat("en-GB", {
+  const parts = new Intl.DateTimeFormat("en-AU", {
     timeZone: SERVICE_ZONE,
     timeZoneName: "short",
   }).formatToParts(date);
@@ -297,7 +301,7 @@ export function expandProse(html: string): string {
 /** The clock in every page header, in the style the service used. */
 export function renderClock(bulletin: Bulletin): string {
   const at = new Date(bulletin.fetchedAt);
-  const day = inLondon(at, { weekday: "short", day: "2-digit", month: "short" });
+  const day = inZone(at, { weekday: "short", day: "2-digit", month: "short" });
   return escapeHtml(`${day} ${serviceTime(at)} ${serviceZone(at)}`);
 }
 

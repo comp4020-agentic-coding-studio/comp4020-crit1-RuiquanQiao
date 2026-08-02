@@ -228,5 +228,9 @@ rule I added after getting it wrong once, so read it before proposing a change.
   right about what news is.
 - Section feeds repeat a front-page story under a shortened headline. Dedupe on
   one normalised headline being a **prefix** of another, keeping the longer.
-- The clock is London time with its real abbreviation. UTC is a near miss for
-  half the year, which is worse than being plainly foreign.
+- The clock is **Canberra** time with its real abbreviation: the source is
+  British but the reader is not, and at the crit the page's clock should agree
+  with the clock in the room. The zone is pinned rather than taken from the
+  machine because the deploy builds on a UTC runner. Only `en-AU` names the zone
+  ("AEST"/"AEDT"); `en-GB` renders it as "GMT+10", so the date and the zone are
+  formatted with different locales on purpose.

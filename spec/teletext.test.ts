@@ -81,22 +81,24 @@ describe("the build survives a feed that does not answer", () => {
 });
 
 describe("the service clock", () => {
-  // A British service kept British time, and half the year that is not UTC.
-  it("reads London time in summer, not UTC", () => {
-    const summer = new Date("2026-08-02T08:00:00Z");
-    expect(serviceTime(summer)).toBe("09:00");
-    expect(serviceZone(summer)).toBe("BST");
+  // The page is read in Canberra, so it keeps Canberra's clock — and the zone is
+  // pinned rather than taken from the machine, because the deploy builds on a
+  // UTC runner and a clock two hours behind the room would be worse than none.
+  it("reads Canberra time in winter", () => {
+    const winter = new Date("2026-08-02T08:00:00Z");
+    expect(serviceTime(winter)).toBe("18:00");
+    expect(serviceZone(winter)).toBe("AEST");
   });
 
-  it("reads London time in winter, which is UTC", () => {
-    const winter = new Date("2026-01-15T08:00:00Z");
-    expect(serviceTime(winter)).toBe("08:00");
-    expect(serviceZone(winter)).toBe("GMT");
+  it("follows Canberra into daylight saving", () => {
+    const summer = new Date("2026-01-15T08:00:00Z");
+    expect(serviceTime(summer)).toBe("19:00");
+    expect(serviceZone(summer)).toBe("AEDT");
   });
 
-  it("does not follow the reader's own clock", () => {
+  it("crosses the date in Canberra, not in UTC", () => {
     const instant = new Date("2026-08-02T22:30:00Z");
-    expect(serviceTime(instant)).toBe("23:30");
+    expect(serviceTime(instant)).toBe("08:30");
   });
 });
 
