@@ -114,6 +114,30 @@ describe("it is a real site", () => {
     expect(broken, "references with no file behind them").toEqual([]);
   });
 
+  // A page number printed beside a headline is a promise about where that story
+  // is. If it is not a link, the promise cannot be kept — the reader is left
+  // looking at a number with nothing to do about it.
+  it("makes every printed page number lead to the page it names", () => {
+    const present = new Set(
+      files(DIST).map((path) => path.slice(DIST.length + 1).replace(/\\/g, "/")),
+    );
+
+    for (const { name, doc } of pages) {
+      for (const ref of doc.querySelectorAll(".pageref")) {
+        const number = (ref.textContent ?? "").trim();
+        const link = ref.closest("a");
+        expect(link, `${name}: page number ${number} is not a link`).not.toBeNull();
+
+        const href = link?.getAttribute("href") ?? "";
+        const target = href.replace(/^\.\//, "");
+        expect(target, `${name}: page number ${number} points at ${href}`).toBe(
+          `${number}.html`,
+        );
+        expect(present.has(target), `${name}: ${target} does not exist`).toBe(true);
+      }
+    }
+  });
+
   it("lets every page get back to the home page", () => {
     for (const { name, doc } of pages) {
       if (name === "index.html") continue;

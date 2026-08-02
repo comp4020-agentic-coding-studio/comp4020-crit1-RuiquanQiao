@@ -316,3 +316,21 @@ a:focus {
   background: var(--tt-black);
   outline: 1px solid currentcolor;
 }
+
+/* A headline is a link to the page it names, and the whole block is the target.
+ * Three digits at the phone viewport is about twenty-five pixels of tappable
+ * width, which is not a target anyone can hit — and a page number a reader
+ * cannot act on is decoration pretending to be navigation.
+ *
+ * Colour is inherited so the rows inside keep leading yellow and continuing
+ * white: the page looks exactly as it did, and only the highlight is new. */
+.headline-link {
+  display: block;
+  color: inherit;
+}
+
+.headline-link:hover,
+.headline-link:focus {
+  color: inherit;
+  background: var(--tt-blue);
+}

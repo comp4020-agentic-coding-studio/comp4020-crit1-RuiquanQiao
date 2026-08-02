@@ -260,10 +260,14 @@ function rows(lines: string[], className: string): string {
  * A headline with its page number set hard against the right margin.
  *
  * This is teletext's signature and the thing a numbered list cannot do: the
- * reader's eye runs down a column of three-digit numbers and each one is an
- * instruction — type it and you get that story. The number is not decoration,
- * so it is placed by arithmetic on the grid rather than by an alignment rule
- * that could round differently.
+ * reader's eye runs down a column of three-digit numbers, each one naming where
+ * that story is told. The number is placed by arithmetic on the grid rather
+ * than by an alignment rule that could round differently.
+ *
+ * The whole headline is the link, not just the number. On the phone viewport
+ * three digits are about twenty-five pixels wide, which is not a target anyone
+ * can hit — and a page number that a reader cannot act on is decoration
+ * pretending to be navigation.
  */
 export function renderHeadlines(pages: { page: number; story: Story }[]): string {
   return pages
@@ -279,7 +283,16 @@ export function renderHeadlines(pages: { page: number; story: Story }[]): string
         .slice(1)
         .map((line) => `<p class="row cont">${escapeHtml(line)}</p>`)
         .join("\n");
-      return [`<li class="headline">`, first, rest, `</li>`].filter(Boolean).join("\n");
+      return [
+        `<li class="headline">`,
+        `<a class="headline-link" href="./${ref}.html">`,
+        first,
+        rest,
+        `</a>`,
+        `</li>`,
+      ]
+        .filter(Boolean)
+        .join("\n");
     })
     .join("\n");
 }
