@@ -1,6 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { defineConfig } from "vite";
+import { teletext } from "./teletext";
 
 // Every .html file in the repo is a page and a build entry, so a multi-page
 // hand-written site needs no build config: add pages, link them, ship.
@@ -21,6 +22,9 @@ function htmlEntries(dir = "."): string[] {
 // GitHub Pages path (username.github.io/your-repo/) without further config.
 export default defineConfig({
   base: "./",
+  // The feed is read here, at build time, so that nothing about it reaches the
+  // browser: this week's brief allows plain HTML and CSS only.
+  plugins: [teletext()],
   build: {
     rollupOptions: {
       input: htmlEntries(),

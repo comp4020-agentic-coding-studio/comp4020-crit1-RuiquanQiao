@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>P101 News headlines — Teletext</title>
+    <meta name="description" content="Today's headlines, wrapped to a 40-column teletext grid." />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="screen">
+      <div class="statusbar">
+        <span class="page-no">P101</span>
+        <span class="service">Teletext</span>
+        <span class="clock"><!--tt:clock--></span>
+      </div>
+      <div class="colourbar" aria-hidden="true"></div>
+
+      <main>
+        <h1>News headlines</h1>
+
+        <ol class="headlines"><!--tt:headlines--></ol>
+
+        <p class="source">
+          <!--tt:source--> · read <!--tt:clock--> · 102 for the same stories in
+          full
+        </p>
+      </main>
+
+      <nav aria-label="Teletext pages">
+        <p class="index-row"><a href="./">100 Index</a></p>
+        <div class="fastext">
+          <span class="key key-red" aria-disabled="true">101 News</span>
+          <a class="key key-green" href="./102.html">102 Full</a>
+          <a class="key key-yellow" href="./103.html">103 More</a>
+          <a class="key key-cyan" href="./199.html">199 About</a>
+        </div>
+      </nav>
+    </div>
+  </body>
+</html>

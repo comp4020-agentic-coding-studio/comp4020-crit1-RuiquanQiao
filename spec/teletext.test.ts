@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { MAX_AGE_HOURS, decodeEntities, normaliseTitle, parseFeed, wrap } from "../teletext";
+import {
+  MAX_AGE_HOURS,
+  decodeEntities,
+  normaliseTitle,
+  parseFeed,
+  serviceTime,
+  serviceZone,
+  wrap,
+} from "../teletext";
 
 // Contracts for the engine that turns a feed into a fixed grid. These test what
 // the pages must be true of, not how the engine is written: the grid has a hard
@@ -51,6 +59,26 @@ describe("feed entities", () => {
 
   it("leaves an unknown entity alone rather than mangling it", () => {
     expect(decodeEntities("&notanentity;")).toBe("&notanentity;");
+  });
+});
+
+describe("the service clock", () => {
+  // A British service kept British time, and half the year that is not UTC.
+  it("reads London time in summer, not UTC", () => {
+    const summer = new Date("2026-08-02T08:00:00Z");
+    expect(serviceTime(summer)).toBe("09:00");
+    expect(serviceZone(summer)).toBe("BST");
+  });
+
+  it("reads London time in winter, which is UTC", () => {
+    const winter = new Date("2026-01-15T08:00:00Z");
+    expect(serviceTime(winter)).toBe("08:00");
+    expect(serviceZone(winter)).toBe("GMT");
+  });
+
+  it("does not follow the reader's own clock", () => {
+    const instant = new Date("2026-08-02T22:30:00Z");
+    expect(serviceTime(instant)).toBe("23:30");
   });
 });
 

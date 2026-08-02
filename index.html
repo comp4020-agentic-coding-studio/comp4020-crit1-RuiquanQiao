@@ -1,24 +1,65 @@
 <!doctype html>
-<html lang="en-AU">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COMP4020 prototype</title>
+    <title>P100 Contents — Teletext</title>
+    <meta
+      name="description"
+      content="A teletext news service, rendered as plain HTML and CSS. Today's headlines on a 40-column grid."
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header>
-      <nav aria-label="Primary">
-        <a href="./">Home</a>
+    <div class="screen">
+      <div class="statusbar">
+        <span class="page-no">P100</span>
+        <span class="service">Teletext</span>
+        <span class="clock"><!--tt:clock--></span>
+      </div>
+      <div class="colourbar" aria-hidden="true"></div>
+
+      <main>
+        <h1>Contents</h1>
+
+        <p class="wrap">
+          Ceefax closed in October 2012 after thirty-eight years. This is today's
+          news put back into it: a fixed grid, seven colours, and no script of
+          any kind.
+        </p>
+
+        <ul class="index">
+          <li class="index-row">
+            <span class="index-no">101</span>
+            <a href="./101.html">News headlines</a>
+          </li>
+          <li class="index-row">
+            <span class="index-no">102</span>
+            <a href="./102.html">News in full</a>
+          </li>
+          <li class="index-row">
+            <span class="index-no">103</span>
+            <a href="./103.html">More news</a>
+          </li>
+          <li class="index-row">
+            <span class="index-no">199</span>
+            <a href="./199.html">About this service</a>
+          </li>
+        </ul>
+
+        <p class="source">
+          <!--tt:count--> stories from <!--tt:source--> · read <!--tt:clock-->
+        </p>
+      </main>
+
+      <nav aria-label="Teletext pages">
+        <div class="fastext">
+          <a class="key key-red" href="./101.html">101 News</a>
+          <a class="key key-green" href="./102.html">102 Full</a>
+          <a class="key key-yellow" href="./103.html">103 More</a>
+          <a class="key key-cyan" href="./199.html">199 About</a>
+        </div>
       </nav>
-    </header>
-    <main>
-      <h1>COMP4020 prototype</h1>
-      <p data-testid="intro">
-        Replace this with your prototype. This week's brief is on the course website;
-        <code>spec/README.md</code> explains how the checks in this repo relate to it.
-      </p>
-    </main>
-    <script type="module" src="./main.ts"></script>
+    </div>
   </body>
 </html>

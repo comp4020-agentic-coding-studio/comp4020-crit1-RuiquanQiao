@@ -239,14 +239,35 @@ export function renderHeadlines(stories: Story[]): string {
     .join("\n");
 }
 
+// The service was British, so its clock is: London time, labelled with whatever
+// London is calling it today. Showing UTC would be a near miss for half the
+// year, which is worse than being obviously foreign.
+const SERVICE_ZONE = "Europe/London";
+
+function inLondon(date: Date, options: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat("en-GB", { timeZone: SERVICE_ZONE, ...options }).format(date);
+}
+
+/** "18:24" in London, whatever the reader's own clock says. */
+export function serviceTime(date: Date): string {
+  return inLondon(date, { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+/** "BST" in summer, "GMT" in winter. */
+export function serviceZone(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: SERVICE_ZONE,
+    timeZoneName: "short",
+  }).formatToParts(date);
+  return parts.find((part) => part.type === "timeZoneName")?.value ?? "";
+}
+
 /** A story in full: headline, then its summary, then its clock. */
 export function renderStories(stories: Story[]): string {
   return stories
     .map((story) => {
       const time = new Date(story.published);
-      const stamp = `${String(time.getUTCHours()).padStart(2, "0")}:${String(
-        time.getUTCMinutes(),
-      ).padStart(2, "0")} GMT`;
+      const stamp = `${serviceTime(time)} ${serviceZone(time)}`;
       return [
         `<li class="story">`,
         rows(wrap(story.title, BODY_WIDTH), "row headline-row"),
@@ -258,19 +279,26 @@ export function renderStories(stories: Story[]): string {
     .join("\n");
 }
 
+/**
+ * Expand authored prose into grid rows.
+ *
+ * A `<p class="wrap">` in a page is written as ordinary readable prose; the
+ * build breaks it to the column count. The alternative is counting characters
+ * by hand in the markup, which is how a grid drifts one column wider without
+ * anyone noticing.
+ */
+export function expandProse(html: string): string {
+  return html.replace(/<p class="wrap">([\s\S]*?)<\/p>/g, (_, text: string) => {
+    const flat = decodeEntities(text).replace(/\s+/g, " ").trim();
+    return rows(wrap(flat, BODY_WIDTH), "row");
+  });
+}
+
 /** The clock in every page header, in the style the service used. */
 export function renderClock(bulletin: Bulletin): string {
   const at = new Date(bulletin.fetchedAt);
-  const day = at.toLocaleDateString("en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-  });
-  const time = `${String(at.getUTCHours()).padStart(2, "0")}:${String(
-    at.getUTCMinutes(),
-  ).padStart(2, "0")}`;
-  return escapeHtml(`${day} ${time}`);
+  const day = inLondon(at, { weekday: "short", day: "2-digit", month: "short" });
+  return escapeHtml(`${day} ${serviceTime(at)} ${serviceZone(at)}`);
 }
 
 // --- the Vite plugin --------------------------------------------------------
@@ -296,13 +324,15 @@ export function teletext(): Plugin {
       handler(html: string): string {
         if (!bulletin) throw new Error("no bulletin loaded");
         const { stories } = bulletin;
-        return html
-          .replaceAll("<!--tt:clock-->", renderClock(bulletin))
-          .replaceAll("<!--tt:count-->", String(stories.length))
-          .replaceAll("<!--tt:source-->", escapeHtml(bulletin.source))
-          .replaceAll("<!--tt:headlines-->", renderHeadlines(stories.slice(0, 9)))
-          .replaceAll("<!--tt:stories-->", renderStories(stories.slice(0, 4)))
-          .replaceAll("<!--tt:more-->", renderStories(stories.slice(4, 9)));
+        return expandProse(
+          html
+            .replaceAll("<!--tt:clock-->", renderClock(bulletin))
+            .replaceAll("<!--tt:count-->", String(stories.length))
+            .replaceAll("<!--tt:source-->", escapeHtml(bulletin.source))
+            .replaceAll("<!--tt:headlines-->", renderHeadlines(stories.slice(0, 9)))
+            .replaceAll("<!--tt:stories-->", renderStories(stories.slice(0, 4)))
+            .replaceAll("<!--tt:more-->", renderStories(stories.slice(4, 9))),
+        );
       },
     },
   };
