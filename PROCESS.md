@@ -4,10 +4,10 @@
 
 A teletext news service: eleven pages on a 40x24 grid, seven colours on black,
 navigated by three-digit page numbers and four coloured keys. Each lead story has
-a page of its own in the 300s, and the headline list carries the number to type
-for it. Ceefax closed in October 2012; this puts today's BBC News feed back into
-the interface that carried it. The feed is read at build time, so the shipped
-site is plain HTML and CSS with no script of any kind.
+a page of its own in the 300s, and the headline list carries the number of the
+page it is told on. Ceefax closed in October 2012; this puts today's BBC News
+feed back into the interface that carried it. The feed is read at build time, so
+the shipped site is plain HTML and CSS with no script of any kind.
 
 ## The moments that mattered
 
